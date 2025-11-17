@@ -97,10 +97,13 @@ export async function stopRecording() {
     }
 
     console.log('Stopping recording...');
-    await recording.stopAndUnloadAsync();
 
+    // Get URI and status BEFORE stopping and unloading
     const uri = recording.getURI();
     const status = await recording.getStatusAsync();
+
+    // Now stop and unload the recording
+    await recording.stopAndUnloadAsync();
 
     isRecording = false;
     const recordingInstance = recording;
