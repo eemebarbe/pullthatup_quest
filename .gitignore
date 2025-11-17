@@ -36,6 +36,9 @@ yarn-error.*
 # Firebase config
 firebase.config.js
 
+# OpenAI config
+openai.config.js
+
 # typescript
 *.tsbuildinfo
 

@@ -32,18 +32,24 @@ function generateRandomUsername() {
  */
 export async function getUserId() {
   try {
+    console.log('getUserId: Starting...');
     let userId = await AsyncStorage.getItem(USER_ID_KEY);
+    console.log('getUserId: Retrieved from storage:', userId);
 
     if (!userId) {
       userId = generateUserId();
+      console.log('getUserId: Generated new ID:', userId);
       await AsyncStorage.setItem(USER_ID_KEY, userId);
+      console.log('getUserId: Saved to storage');
     }
 
     return userId;
   } catch (error) {
     console.error('Error getting user ID:', error);
     // Fallback to temporary ID if storage fails
-    return generateUserId();
+    const fallbackId = generateUserId();
+    console.log('getUserId: Using fallback ID:', fallbackId);
+    return fallbackId;
   }
 }
 
@@ -53,17 +59,23 @@ export async function getUserId() {
  */
 export async function getUsername() {
   try {
+    console.log('getUsername: Starting...');
     let username = await AsyncStorage.getItem(USER_NAME_KEY);
+    console.log('getUsername: Retrieved from storage:', username);
 
     if (!username) {
       username = generateRandomUsername();
+      console.log('getUsername: Generated new username:', username);
       await AsyncStorage.setItem(USER_NAME_KEY, username);
+      console.log('getUsername: Saved to storage');
     }
 
     return username;
   } catch (error) {
     console.error('Error getting username:', error);
-    return generateRandomUsername();
+    const fallbackUsername = generateRandomUsername();
+    console.log('getUsername: Using fallback username:', fallbackUsername);
+    return fallbackUsername;
   }
 }
 

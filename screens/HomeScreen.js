@@ -32,9 +32,15 @@ export default function HomeScreen({ navigation }) {
     // Initialize Firebase on mount
     try {
       initializeFirebase();
+      console.log('Firebase initialized successfully');
     } catch (error) {
-      Alert.alert('Error', 'Failed to initialize Firebase. Please check your configuration.');
-      console.error(error);
+      const errorMsg = 'Failed to initialize Firebase. Please check your configuration.';
+      console.error('Firebase init error:', error);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('Error', errorMsg);
+      }
     }
 
     // Load username
@@ -44,7 +50,9 @@ export default function HomeScreen({ navigation }) {
   const handleCreateRoom = async () => {
     setLoading(true);
     try {
+      console.log('Creating room...');
       const { roomId, userId, username } = await createRoom();
+      console.log('Room created:', { roomId, userId, username });
 
       // Navigate to room screen
       navigation.navigate('Room', {
@@ -53,8 +61,13 @@ export default function HomeScreen({ navigation }) {
         username,
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to create room. Please try again.');
-      console.error(error);
+      const errorMsg = `Failed to create room: ${error.message}`;
+      console.error('Create room error:', error);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('Error', errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -64,12 +77,14 @@ export default function HomeScreen({ navigation }) {
     const roomId = joinRoomId.trim().toUpperCase();
 
     if (!roomId) {
-      Alert.alert('Invalid Room ID', 'Please enter a room ID');
+      const msg = 'Please enter a room ID';
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Invalid Room ID', msg);
       return;
     }
 
     if (!isValidRoomId(roomId)) {
-      Alert.alert('Invalid Room ID', 'Room ID must be 6 characters');
+      const msg = 'Room ID must be 6 characters';
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Invalid Room ID', msg);
       return;
     }
 
@@ -79,7 +94,8 @@ export default function HomeScreen({ navigation }) {
       const exists = await roomExists(roomId);
 
       if (!exists) {
-        Alert.alert('Room Not Found', 'This room does not exist');
+        const msg = 'This room does not exist';
+        Platform.OS === 'web' ? alert(msg) : Alert.alert('Room Not Found', msg);
         setLoading(false);
         return;
       }
@@ -99,8 +115,9 @@ export default function HomeScreen({ navigation }) {
 
       setJoinRoomId('');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to join room');
-      console.error(error);
+      const errorMsg = error.message || 'Failed to join room';
+      console.error('Join room error:', error);
+      Platform.OS === 'web' ? alert(errorMsg) : Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
