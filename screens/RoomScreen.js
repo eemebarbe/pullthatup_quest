@@ -38,7 +38,6 @@ export default function RoomScreen({ route, navigation }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
-  const recordingIntervalRef = useRef(null);
   const currentRecordingStart = useRef(null);
 
   // Request audio permissions on mount
@@ -75,7 +74,43 @@ export default function RoomScreen({ route, navigation }) {
     };
   }, [roomId, userId]);
 
-  // Handle recording cycle
+  // Process a completed recording segment
+  const processRecordingSegment = async (recordingResult, startTime) => {
+    try {
+      setIsProcessing(true);
+
+      if (recordingResult && recordingResult.uri) {
+        console.log('Processing recording:', recordingResult.uri);
+
+        // Prepare audio for Whisper
+        const { uri, mimeType } = await prepareAudioForWhisper(recordingResult.uri);
+
+        // Transcribe with Whisper
+        const transcribedText = await transcribeAudio(uri, mimeType);
+
+        if (transcribedText && transcribedText.trim()) {
+          console.log('Transcribed:', transcribedText);
+
+          // Add to Firebase
+          await addConversationSegment(
+            roomId,
+            userId,
+            username,
+            transcribedText,
+            startTime
+          );
+        } else {
+          console.log('No speech detected in segment');
+        }
+      }
+    } catch (error) {
+      console.error('Error processing recording:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle continuous recording with 10-second segments
   const handleRecordingCycle = async () => {
     try {
       console.log('Starting recording cycle...');
@@ -85,45 +120,30 @@ export default function RoomScreen({ route, navigation }) {
       // Start recording
       await startRecording();
 
-      // Stop and process after interval
+      // After 10 seconds: stop, immediately start next, then process in parallel
       setTimeout(async () => {
         try {
-          setIsProcessing(true);
+          // Stop current recording and get the result
           const recordingResult = await stopRecording();
 
-          if (recordingResult && recordingResult.uri) {
-            console.log('Processing recording:', recordingResult.uri);
-
-            // Prepare audio for Whisper
-            const { uri, mimeType } = await prepareAudioForWhisper(recordingResult.uri);
-
-            // Transcribe with Whisper
-            const transcribedText = await transcribeAudio(uri, mimeType);
-
-            if (transcribedText && transcribedText.trim()) {
-              console.log('Transcribed:', transcribedText);
-
-              // Add to Firebase
-              await addConversationSegment(
-                roomId,
-                userId,
-                username,
-                transcribedText,
-                startTime
-              );
-            } else {
-              console.log('No speech detected in segment');
-            }
+          // IMMEDIATELY start the next recording to minimize gap
+          if (isRecording) {
+            handleRecordingCycle();
           }
+
+          // Process the previous recording in parallel (non-blocking)
+          processRecordingSegment(recordingResult, startTime);
+
         } catch (error) {
-          console.error('Error processing recording:', error);
-        } finally {
-          setIsProcessing(false);
+          console.error('Error in recording cycle:', error);
+          // Try to continue recording on error
+          if (isRecording) {
+            handleRecordingCycle();
+          }
         }
-      }, RECORDING_INTERVAL + 100);
+      }, RECORDING_INTERVAL);
     } catch (error) {
-      console.error('Error in recording cycle:', error);
-      setIsProcessing(false);
+      console.error('Error starting recording cycle:', error);
     }
   };
 
@@ -136,32 +156,22 @@ export default function RoomScreen({ route, navigation }) {
     }
 
     if (isRecording) {
-      // Stop recording
+      // Stop recording (handleRecordingCycle will check isRecording and stop)
       setIsRecording(false);
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
+      await stopRecording();
     } else {
-      // Start recording
+      // Start continuous recording
       setIsRecording(true);
 
-      // Immediate first recording
+      // Start the recording cycle (it will recursively continue)
       await handleRecordingCycle();
-
-      // Set up interval for continuous recording
-      recordingIntervalRef.current = setInterval(() => {
-        handleRecordingCycle();
-      }, RECORDING_INTERVAL);
     }
   };
 
-  // Cleanup on unmount
+  // Cleanup on unmount - stop any active recording
   useEffect(() => {
     return () => {
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
+      stopRecording().catch(console.error);
     };
   }, []);
 
