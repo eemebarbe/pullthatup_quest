@@ -6,13 +6,19 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
-  Clipboard,
+  Platform,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Clipboard from 'expo-clipboard';
 import {
   subscribeToRoomUsers,
   leaveRoom,
 } from '../services/firebase';
+
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 768;
 
 export default function RoomScreen({ route, navigation }) {
   const { roomId, userId, username } = route.params;
@@ -34,9 +40,18 @@ export default function RoomScreen({ route, navigation }) {
     };
   }, [roomId, userId]);
 
-  const handleCopyRoomId = () => {
-    Clipboard.setString(roomId);
-    Alert.alert('Copied!', `Room ID ${roomId} copied to clipboard`);
+  const handleCopyRoomId = async () => {
+    try {
+      await Clipboard.setStringAsync(roomId);
+      if (Platform.OS === 'web') {
+        // On web, use a simple alert or notification
+        alert(`Room ID ${roomId} copied to clipboard!`);
+      } else {
+        Alert.alert('Copied!', `Room ID ${roomId} copied to clipboard`);
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
   };
 
   const handleLeaveRoom = () => {
@@ -87,7 +102,9 @@ export default function RoomScreen({ route, navigation }) {
         >
           <Text style={styles.roomIdLabel}>Room ID</Text>
           <Text style={styles.roomIdText}>{roomId}</Text>
-          <Text style={styles.tapToCopy}>Tap to copy</Text>
+          <Text style={styles.tapToCopy}>
+            {Platform.OS === 'web' ? 'Click to copy' : 'Tap to copy'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveRoom}>
@@ -95,34 +112,52 @@ export default function RoomScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Users List */}
-      <View style={styles.usersSection}>
-        <Text style={styles.sectionTitle}>
-          Users in Room ({users.length})
-        </Text>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Users List */}
+        <View style={styles.usersSection}>
+          <Text style={styles.sectionTitle}>
+            Users in Room ({users.length})
+          </Text>
 
-        <FlatList
-          data={users}
-          renderItem={renderUser}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.usersList}
-          ListEmptyComponent={
+          {users.length > 0 ? (
+            <View style={styles.usersList}>
+              {users.map((item) => (
+                <View key={item.id} style={styles.userItem}>
+                  <View style={styles.userAvatar}>
+                    <Text style={styles.userAvatarText}>
+                      {item.username?.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.username}>{item.username}</Text>
+                    {item.id === userId && (
+                      <Text style={styles.youLabel}>(You)</Text>
+                    )}
+                  </View>
+                  <View style={[styles.statusDot, item.online && styles.statusDotOnline]} />
+                </View>
+              ))}
+            </View>
+          ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>
                 No users in the room yet
               </Text>
             </View>
-          }
-        />
-      </View>
+          )}
+        </View>
 
-      {/* Main Content Area */}
-      <View style={styles.mainContent}>
-        <Text style={styles.welcomeText}>Welcome to the room!</Text>
-        <Text style={styles.infoText}>
-          Share the room ID with others to invite them
-        </Text>
-      </View>
+        {/* Main Content Area */}
+        <View style={styles.mainContent}>
+          <Text style={styles.welcomeText}>Welcome to the room!</Text>
+          <Text style={styles.infoText}>
+            Share the room ID with others to invite them
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -132,18 +167,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
   header: {
-    flexDirection: 'row',
+    flexDirection: isSmallScreen ? 'column' : 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: isSmallScreen ? 'stretch' : 'center',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'web' ? 40 : 60,
     backgroundColor: '#2a2a2a',
     borderBottomWidth: 1,
     borderBottomColor: '#3a3a3a',
+    gap: isSmallScreen ? 12 : 0,
   },
   roomIdContainer: {
-    flex: 1,
+    flex: isSmallScreen ? 0 : 1,
+    alignItems: isSmallScreen ? 'center' : 'flex-start',
   },
   roomIdLabel: {
     fontSize: 12,
@@ -151,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   roomIdText: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.06, 24),
     fontWeight: 'bold',
     color: '#fff',
     letterSpacing: 2,
@@ -175,6 +219,9 @@ const styles = StyleSheet.create({
   usersSection: {
     backgroundColor: '#2a2a2a',
     margin: 20,
+    marginHorizontal: Platform.OS === 'web' ? 'auto' : 20,
+    maxWidth: Platform.OS === 'web' ? 800 : '100%',
+    width: Platform.OS === 'web' ? '90%' : 'auto',
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -184,6 +231,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     padding: 16,
     backgroundColor: '#333',
+    textAlign: 'center',
   },
   usersList: {
     padding: 12,
@@ -247,17 +295,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    marginTop: 20,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.05, 24),
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
     textAlign: 'center',
   },
   infoText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.035, 16),
     color: '#888',
     textAlign: 'center',
+    maxWidth: 400,
   },
 });

@@ -3,7 +3,7 @@
     "name": "pullthatup_quest",
     "slug": "pullthatup_quest",
     "version": "1.0.0",
-    "orientation": "landscape",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -24,7 +24,8 @@
       "package": "com.pullthatup.quest"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       [

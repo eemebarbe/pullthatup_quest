@@ -1,19 +1,35 @@
-# Pull That Up Quest - Expo React Native for Horizon OS
+# Pull That Up Quest - Multi-Platform Real-Time Rooms
 
-An Expo React Native application built for Meta Quest's Horizon OS.
+A real-time multiplayer room application built with Expo React Native. Works seamlessly across Meta Quest (Horizon OS), iOS, Android, and Web.
 
 ## Features
 
-- Built with Expo SDK 54
-- Configured for Meta Quest 2, Quest 3, and Quest 3S
-- Uses `expo-horizon-core` for proper Horizon OS support
-- Separate build variants for mobile and Quest platforms
-- Landscape orientation optimized for VR viewing
-- Panel dimensions: 1280dp × 800dp
-- **Real-time multiplayer rooms** with Firebase Realtime Database
-- **Presence detection** - See who's in your room in real-time
+### Multi-Platform Support
+- **Web**: Works in any modern browser (Chrome, Firefox, Safari, etc.)
+- **iOS**: Native iOS app via Expo
+- **Android**: Native Android app with mobile and Quest variants
+- **Meta Quest**: Optimized for Quest 2, 3, and 3S via Horizon OS
+- **Responsive Design**: Adapts to all screen sizes and orientations
+
+### Real-Time Multiplayer
+- **Firebase Realtime Database** for instant synchronization
+- **Presence detection** - See who's online in real-time
 - **6-character room IDs** for easy sharing
-- **Automatic user management** with persistent user IDs and random usernames
+- **Automatic cleanup** when users disconnect
+- **Cross-platform rooms** - Join from any device!
+
+### User Experience
+- **Auto-generated usernames** (e.g., "BraveDragon42")
+- **Persistent user IDs** across app restarts
+- **One-tap room creation**
+- **Copy-to-clipboard** room codes
+- **Real-time user list** with online indicators
+
+### Technical Features
+- Built with Expo SDK 54 and React Native
+- Uses `expo-horizon-core` for Quest/Horizon OS support
+- Separate build variants for mobile and Quest platforms
+- Responsive layouts with platform-specific optimizations
 
 ## Prerequisites
 
@@ -157,6 +173,39 @@ npm run android
 npm run android:release
 ```
 
+### Running on Web
+
+The app works great on web browsers! Perfect for testing or as a companion experience:
+
+```bash
+npm run web
+```
+
+Then open your browser to the URL shown (usually http://localhost:8081).
+
+**Web Features:**
+- Full Firebase integration
+- Real-time room updates
+- Works on desktop and mobile browsers
+- No installation required - share the URL with friends!
+
+### Running on iOS
+
+```bash
+npm run ios
+```
+
+Note: Requires a Mac with Xcode installed.
+
+## Testing Across Platforms
+
+You can test the multi-platform experience by:
+
+1. **Start the web version**: `npm run web`
+2. **Open Expo Go on mobile**: Scan the QR code from `npm start`
+3. **Join the same room** from both devices
+4. **See real-time presence** working across platforms!
+
 ## Available Scripts
 
 - `npm start` - Start Expo development server
@@ -164,6 +213,8 @@ npm run android:release
 - `npm run android:release` - Run mobile release build
 - `npm run quest` - Run Quest debug build
 - `npm run quest:release` - Run Quest release build
+- `npm run web` - Run web version in browser
+- `npm run ios` - Run iOS app (requires Mac)
 - `npm run prebuild` - Generate native Android files
 - `npm run prebuild:clean` - Clean and regenerate native files
 

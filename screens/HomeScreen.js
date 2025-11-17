@@ -7,6 +7,9 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -17,6 +20,8 @@ import {
 } from '../services/firebase';
 import { getUserId, getUsername } from '../utils/userId';
 import { isValidRoomId } from '../utils/roomId';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const [joinRoomId, setJoinRoomId] = useState('');
@@ -105,76 +110,83 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Pull That Up</Text>
-        <Text style={styles.subtitle}>Quest Edition</Text>
-        {username && (
-          <Text style={styles.usernameText}>Playing as: {username}</Text>
-        )}
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Pull That Up</Text>
+          <Text style={styles.subtitle}>
+            {Platform.OS === 'web' ? 'Web Edition' : 'Multi-Platform'}
+          </Text>
+          {username && (
+            <Text style={styles.usernameText}>Playing as: {username}</Text>
+          )}
+        </View>
 
-      <View style={styles.content}>
-        {/* Create Room Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Create a New Room</Text>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={handleCreateRoom}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.createButtonText}>Create Room</Text>
-            )}
-          </TouchableOpacity>
-          <Text style={styles.helperText}>
-            Create a room and share the code with friends
+        <View style={styles.content}>
+          {/* Create Room Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Create a New Room</Text>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={handleCreateRoom}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.createButtonText}>Create Room</Text>
+              )}
+            </TouchableOpacity>
+            <Text style={styles.helperText}>
+              Create a room and share the code with friends
+            </Text>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Join Room Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Join a Room</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter 6-character room ID"
+              placeholderTextColor="#666"
+              value={joinRoomId}
+              onChangeText={setJoinRoomId}
+              autoCapitalize="characters"
+              maxLength={6}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={[
+                styles.joinButton,
+                (!joinRoomId.trim() || loading) && styles.buttonDisabled,
+              ]}
+              onPress={handleJoinRoom}
+              disabled={!joinRoomId.trim() || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.joinButtonText}>Join Room</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Works on Quest, Mobile & Web • Built with Expo & Firebase
           </Text>
         </View>
-
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Join Room Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Join a Room</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter 6-character room ID"
-            placeholderTextColor="#666"
-            value={joinRoomId}
-            onChangeText={setJoinRoomId}
-            autoCapitalize="characters"
-            maxLength={6}
-            editable={!loading}
-          />
-          <TouchableOpacity
-            style={[
-              styles.joinButton,
-              (!joinRoomId.trim() || loading) && styles.buttonDisabled,
-            ]}
-            onPress={handleJoinRoom}
-            disabled={!joinRoomId.trim() || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.joinButtonText}>Join Room</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Built for Meta Quest with Expo & Firebase
-        </Text>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -184,8 +196,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
+  },
   header: {
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'web' ? 40 : 60,
     paddingBottom: 40,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -194,23 +210,29 @@ const styles = StyleSheet.create({
     borderBottomColor: '#3a3a3a',
   },
   title: {
-    fontSize: 36,
+    fontSize: Math.min(width * 0.08, 36),
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.04, 18),
     color: '#4CAF50',
     marginBottom: 16,
+    textAlign: 'center',
   },
   usernameText: {
     fontSize: 14,
     color: '#888',
+    textAlign: 'center',
   },
   content: {
     flex: 1,
     padding: 20,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
     justifyContent: 'center',
   },
   section: {
