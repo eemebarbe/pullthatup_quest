@@ -21,8 +21,8 @@ import {
 import {
   requestAudioPermissions,
   initializeAudioMode,
-  startRecording,
-  stopRecording,
+  startContinuousRecording,
+  stopContinuousRecording,
   prepareAudioForWhisper,
 } from '../services/audioRecording';
 import { transcribeAudio } from '../services/whisper';
@@ -75,15 +75,15 @@ export default function RoomScreen({ route, navigation }) {
   }, [roomId, userId]);
 
   // Process a completed recording segment
-  const processRecordingSegment = async (recordingResult, startTime) => {
+  const processRecordingSegment = async (chunk) => {
     try {
       setIsProcessing(true);
 
-      if (recordingResult && recordingResult.uri) {
-        console.log('Processing recording:', recordingResult.uri);
+      if (chunk && chunk.uri) {
+        console.log('Processing recording chunk:', chunk.uri, 'from', chunk.startTime);
 
         // Prepare audio for Whisper
-        const { uri, mimeType } = await prepareAudioForWhisper(recordingResult.uri);
+        const { uri, mimeType } = await prepareAudioForWhisper(chunk.uri);
 
         // Transcribe with Whisper
         const transcribedText = await transcribeAudio(uri, mimeType);
@@ -97,7 +97,7 @@ export default function RoomScreen({ route, navigation }) {
             userId,
             username,
             transcribedText,
-            startTime
+            chunk.startTime
           );
         } else {
           console.log('No speech detected in segment');
@@ -110,43 +110,6 @@ export default function RoomScreen({ route, navigation }) {
     }
   };
 
-  // Handle continuous recording with 10-second segments
-  const handleRecordingCycle = async () => {
-    try {
-      console.log('Starting recording cycle...');
-      const startTime = Date.now();
-      currentRecordingStart.current = startTime;
-
-      // Start recording
-      await startRecording();
-
-      // After 10 seconds: stop, immediately start next, then process in parallel
-      setTimeout(async () => {
-        try {
-          // Stop current recording and get the result
-          const recordingResult = await stopRecording();
-
-          // IMMEDIATELY start the next recording to minimize gap
-          if (isRecording) {
-            handleRecordingCycle();
-          }
-
-          // Process the previous recording in parallel (non-blocking)
-          processRecordingSegment(recordingResult, startTime);
-
-        } catch (error) {
-          console.error('Error in recording cycle:', error);
-          // Try to continue recording on error
-          if (isRecording) {
-            handleRecordingCycle();
-          }
-        }
-      }, RECORDING_INTERVAL);
-    } catch (error) {
-      console.error('Error starting recording cycle:', error);
-    }
-  };
-
   // Start/stop recording
   const toggleRecording = async () => {
     if (!hasPermission) {
@@ -156,22 +119,27 @@ export default function RoomScreen({ route, navigation }) {
     }
 
     if (isRecording) {
-      // Stop recording (handleRecordingCycle will check isRecording and stop)
+      // Stop continuous recording
+      console.log('Stopping continuous recording...');
       setIsRecording(false);
-      await stopRecording();
+      await stopContinuousRecording();
     } else {
-      // Start continuous recording
+      // Start continuous recording with chunk callback
+      console.log('Starting continuous recording...');
       setIsRecording(true);
 
-      // Start the recording cycle (it will recursively continue)
-      await handleRecordingCycle();
+      await startContinuousRecording((chunk) => {
+        // This callback is called every 10 seconds with a new audio chunk
+        console.log('Received audio chunk:', chunk);
+        processRecordingSegment(chunk);
+      });
     }
   };
 
   // Cleanup on unmount - stop any active recording
   useEffect(() => {
     return () => {
-      stopRecording().catch(console.error);
+      stopContinuousRecording().catch(console.error);
     };
   }, []);
 
