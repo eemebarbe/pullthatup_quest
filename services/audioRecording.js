@@ -41,10 +41,10 @@ export async function initializeAudioMode() {
 
 /**
  * Start recording audio
- * @param {number} duration - Duration in milliseconds (default 10000ms = 10s)
- * @returns {Promise<{uri: string, duration: number}>} Recording info
+ * Note: Caller is responsible for calling stopRecording() to end the recording
+ * @returns {Promise<{startTime: number, recording: Recording}>} Recording info
  */
-export async function startRecording(duration = 10000) {
+export async function startRecording() {
   try {
     if (isRecording) {
       console.log('Already recording, stopping previous recording');
@@ -64,14 +64,7 @@ export async function startRecording(duration = 10000) {
     isRecording = true;
     console.log('Recording started');
 
-    // Auto-stop after duration
     const startTime = Date.now();
-    setTimeout(async () => {
-      if (isRecording && recording === newRecording) {
-        console.log(`Auto-stopping recording after ${duration}ms`);
-        await stopRecording();
-      }
-    }, duration);
 
     return {
       startTime,

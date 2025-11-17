@@ -83,7 +83,7 @@ export default function RoomScreen({ route, navigation }) {
       currentRecordingStart.current = startTime;
 
       // Start recording
-      await startRecording(RECORDING_INTERVAL);
+      await startRecording();
 
       // Stop and process after interval
       setTimeout(async () => {
