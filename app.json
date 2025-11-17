@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "pullthatup_quest",
+    "slug": "pullthatup_quest",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.pullthatup.quest"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-horizon-core",
+        {
+          "horizonAppId": "",
+          "defaultHeight": "800dp",
+          "defaultWidth": "1280dp",
+          "supportedDevices": "quest2|quest3|quest3s",
+          "disableVrHeadtracking": false,
+          "allowBackup": false
+        }
+      ]
+    ]
+  }
+}
