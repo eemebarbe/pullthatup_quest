@@ -82,8 +82,8 @@ export default function RoomScreen({ route, navigation }) {
       if (chunk && chunk.uri) {
         console.log('Processing recording chunk:', chunk.uri, 'from', chunk.startTime);
 
-        // Prepare audio for Whisper
-        const { uri, mimeType } = await prepareAudioForWhisper(chunk.uri);
+        // Prepare audio for Whisper (pass mimeType from chunk)
+        const { uri, mimeType } = await prepareAudioForWhisper(chunk.uri, chunk.mimeType);
 
         // Transcribe with Whisper
         const transcribedText = await transcribeAudio(uri, mimeType);
